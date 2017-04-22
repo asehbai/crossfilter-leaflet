@@ -1,13 +1,12 @@
 <!doctype html>
-
 <html lang="en">
 <head>
   <meta charset="utf-8">
 
   <title>Crossfilter Geo Test</title>
-  <link rel="stylesheet" href="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.css" >
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" >
   <link rel="stylesheet" href="https://dc-js.github.io/dc.js/css/dc.min.css">
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
   <style>
 
     #map {
@@ -33,15 +32,19 @@
 
   </style>
 
+  <script src="https://dc-js.github.io/dc.js/js/d3.js"></script>
+  <script src="https://dc-js.github.io/dc.js/js/crossfilter.js"></script>
+  <script src="https://dc-js.github.io/dc.js/js/dc.js"></script>
+  <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+  <script src="//api.tiles.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
 </head>
 
 <body>
   <div class="container">
-    <h2>dc.js + crossfilter with Leaflet Map as Filter Input</h2>
-    <p>This interactive data visualization is an example of integrating a leaflet map as an input (not just a display) for dc.js/crossfilter.js.  The data will be filtered on what is currently in view in the map.</p>
-
-    <p>Interact with the charts and map to explore this dataset of all earthquakes with magnitude 1 or greater during August 2016.</p>
-
     <div class="row">
       <div class="col-md-4">
         <div class="dc-data-count"></div>
@@ -60,44 +63,8 @@
         <div id="date-chart"></div> 
       </div>
     </div>
-    <div class="row">
-      <div class="col-md-12">
-        <h3>Why?</h3>
-        <p>I needed to build an interactive data explorer for a spatial dataset.  There were <a href = 'https://austinlyons.github.io/dcjs-leaflet-untappd/'>examples that incorporated leaflet.js maps</a>, but they were one-way, meaning the map only showed the filter results.  I wanted to have the map be a filtering component as well, updating the other charts based on what was currently in view.  I hav also recently seen this sort of 'map as filter' funcionality in carto's new dashboard builder, and wanted to implement it 100% client-side</p>
-
-        <h3>How?</h3>
-        <p>My data source is a geojson featurecollection of earthquakes, <a href = 'http://earthquake.usgs.gov/earthquakes/feed/v1.0/csv.php'>downloaded as a csv from the USGS</a> and converted to geojson in QGIS.  I always call the earthquakes data a good "Hello, World!" dataset for doing multivariate analysis or mapping, as it's got both time and spatial attributes, and a few numerical attributes like depth and magnitude</p>
-
-        <p>The crossfilters and dc.js charts are set up normally, using the array of features from the geojson featurecollection (<a href = 'https://dc-js.github.io/dc.js/'>check out this great example and the annotated code that goes with it</a>).  I create a dimension called 'geomDimension' on each feature's geometry.  'geomDimension.top(Infinity)' returns an array of Geojson features, so I wrap that in a new featurecollection so I can feed it to L.geoJSON and add the data to the map</p>
-
-        <p>
-          To make the map act as a filter, I need a way to determine which points are currently in view, and to apply that filter to the geomDimension whenever there is a new map view.
-        </p>
-
-        <p>
-          I use leaflet's event listeners for zoomend and moveend to trigger the filter.  The task at hand is to determine which points are within the current viewport. Lucky for us, <a href = 'http://turfjs.org/'>Mapbox's excellent client-side spatial data munging library turf.js</a> has a method called 'inside', which will check if a point falls within a polygon, and return true or false. We can use this point-in-polygon checker in the callback for geomDimension.filter() to tell crossfilter which features are in view!
-        </p>
-
-        <p>
-          Using leaflet's map.getBounds() gets back the latLngs for the northEast and southWest corners of the map.  I use these to build a new geoJson polygon for the viewport.
-        </p>
-
-        <p>
-          Once I have the bounding polygon, I call geomDimension.filter() using turf.inside in the callback.  It runs through each point in the dataset, telling crossfilter which ones meet the criteria of being in-view, and crossfilter updates the rest of the charts accordingly.  Woot woot.
-        </p>
-
-        <p>Tweet your thoughts on this to <a href = 'https://twitter.com/chris_whong'>@chris_whong</a>, I would love to hear about it if you end up using this technique.  Sorry for no code snippets in this write-up, maybe later.  Pull requests are welcomed for improving this example, <a href = 'https://github.com/chriswhong/crossfilter-geo-input'>the code is on github</a>. Open Source FTW! </p> 
-
-      </div>
-    </div>
   </div>
-  
-  
-  <script src="https://dc-js.github.io/dc.js/js/d3.js"></script>
-  <script src="https://dc-js.github.io/dc.js/js/crossfilter.js"></script>
-  <script src="https://dc-js.github.io/dc.js/js/dc.js"></script> 
-  <script src="https://npmcdn.com/leaflet@0.7.7/dist/leaflet.js"></script>
-  <script src="//api.tiles.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js"></script>
+
   <script>
 
   var map = L.map('map').setView([30,0], 1);
@@ -105,7 +72,6 @@
   L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{ attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>' })
   .addTo(map);
 
-  
 
   d3.json('earthquakes.geojson', function(data) {
 
@@ -188,7 +154,6 @@
     var depthChart = dc.barChart('#depth-chart')
 
     depthChart
-    
       .height(180)
       .margins({top: 10, right: 50, bottom: 30, left: 40})
       .dimension(depthDimension)
@@ -311,7 +276,6 @@
 
       dc.redrawAll();
     }
-
 
 
   })
