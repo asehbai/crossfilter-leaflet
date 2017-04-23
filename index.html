@@ -27,7 +27,7 @@
 
     .dc-data-count {
       width: 100%;
-      height: 60px;
+      margin: 0 auto;
     }
 
   </style>
@@ -36,7 +36,7 @@
   <script src="https://dc-js.github.io/dc.js/js/crossfilter.js"></script>
   <script src="https://dc-js.github.io/dc.js/js/dc.js"></script>
   <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
-  <script src="//api.tiles.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js"></script>
+  <!--<script src="//api.tiles.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js"></script>-->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <!--story map plugin-->
@@ -68,8 +68,8 @@ L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png').addTo(m
 d3.json('assets/earthquakes.geojson', function(data) {
 
   //create crossfilter and dimensions
-  var filter = crossfilter(data.features);
-  var all = filter.groupAll();
+  var filter = crossfilter(data.features); //filter is the root object of crossfilter
+  var all = filter.groupAll();  // study some of the key functions of crossfilter, such as groupAll, dimension
   var everything = filter.dimension(function(d) {
     return d
   });
@@ -80,7 +80,8 @@ d3.json('assets/earthquakes.geojson', function(data) {
 
   var magDimension = filter.dimension(function(d) {
     var mag = d.properties.mag;
-    return  mag < 1.5 ? '1-1.5' :
+    return  mag < 1.2 ? '1-1.2' :
+            mag < 1.5 ? '1.2-1.5' :
             mag <   2 ? '1.5-2' :
             mag < 2.5 ? '2-2.5' :
             mag <   3 ? '2.5-3' :
@@ -159,10 +160,6 @@ d3.json('assets/earthquakes.geojson', function(data) {
     .ticks(3);
 
 
-
-
-
-
   var dateChart = dc.lineChart('#date-chart');
   dateChart
       .renderArea(true)
@@ -221,50 +218,32 @@ d3.json('assets/earthquakes.geojson', function(data) {
 
   function updateMapFilter() {
 
-    var bounds = map.getBounds(),
-      n=bounds._northEast.lat,
-      e=bounds._northEast.lng,
-      s=bounds._southWest.lat,
-      w=bounds._southWest.lng;
-
-    var boundsFeature = {
-      type: 'Feature',
-      geometry: {
-        type:'Polygon',
-        coordinates: [
-          [
-            [
-              w,
-              s
-            ],
-            [
-              w,
-              n
-            ],
-            [
-              e,
-              n
-            ],
-            [
-              e,
-              s
-            ],
-            [
-              w,
-              s
-            ]
-          ]
-        ]
-      }
-    };
+        //    var bounds = map.getBounds(),
+        //      n=bounds._northEast.lat,
+        //      e=bounds._northEast.lng,
+        //      s=bounds._southWest.lat,
+        //      w=bounds._southWest.lng;
+        //
+        //    var boundsFeature = {
+        //      type: 'Feature',
+        //      geometry: {
+        //        type:'Polygon',
+        //        coordinates: [
+        //          [
+        //            [w, s], [w, n], [e, n], [e, s], [w, s]
+        //          ]
+        //        ]
+        //      }
+        //    };
 
     geomDimension.filter(function(d) {
-      //make feature
-      var point = {
-        type: 'Feature',
-        geometry: d
-      };
-      return turf.inside(point, boundsFeature)
+        //make feature
+        //      var point = {
+        //        type: 'Feature',
+        //        geometry: d
+        //      };
+        //      return turf.inside(point, boundsFeature)
+        return map.getBounds().contains(L.geoJSON(d).getBounds())
     });
     dc.redrawAll();
   }
